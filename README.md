@@ -1,7 +1,3 @@
-Below is an example of a README file you can include with your project:
-
----
-
 # YouTube Comment Responder
 
 This Python project fetches comments from a given YouTube video URL, uses the OpenAI API to generate a thoughtful response based on those comments, and then posts the generated response back as a new comment on the video.
@@ -118,7 +114,3 @@ When prompted, paste the YouTube video URL. The script will then:
 - **OAuth Issues:** If you encounter authentication errors, delete the `token.pickle` file and re-run the script to re-authenticate.
 - **OpenAI Errors:** Verify that your API key is correctly set and that you have internet access.
 - **YouTube Comments:** Ensure that the video URL is valid and that comments are enabled for the video.
-
----
-
-This README provides a comprehensive guide to setting up and running your YouTube Comment Responder project. Happy coding!
