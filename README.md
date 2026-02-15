@@ -1,116 +1,186 @@
-# YouTube Comment Responder
+# YouTube AI Comment Replier
 
-This Python project fetches comments from a given YouTube video URL, uses the OpenAI API to generate a thoughtful response based on those comments, and then posts the generated response back as a new comment on the video.
+A production-ready Python CLI app that:
+1. Authenticates with your own YouTube account via OAuth.
+2. Fetches comments from a target YouTube video.
+3. Uses OpenAI to draft a concise community reply.
+4. Posts that reply back as a top-level YouTube comment.
 
-## Prerequisites
+This project now supports practical usage across **Windows, macOS, Linux, and Android (via Termux)**.
 
-- **Python 3.6+**  
-- **Google Cloud Account:** To use the YouTube Data API v3.
-- **OpenAI API Key:** To access the OpenAI API.
+## Features
 
-## Setup Instructions
+- Clean CLI with argument validation
+- Safe credential handling (`client_secrets.json`, `token.json`, env vars)
+- `--dry-run` mode for safe preview before posting
+- Configurable OpenAI model and number of comments
+- OAuth mode selection (`--auth-mode auto|local|console`) for desktop/headless/Android workflows
+- GitHub Actions workflows to build **Windows `.exe`** and **macOS binary**
 
-### 1. Clone the Repository
+## Quick Start
 
-Clone or download this repository to your local machine.
-
-```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-```
-
-### 2. Create and Activate a Virtual Environment (Optional)
-
-It’s recommended to use a virtual environment for Python projects:
+### 1) Clone and install
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+git clone https://github.com/<your-username>/YouTubeAICommentReplier.git
+cd YouTubeAICommentReplier
+python -m venv .venv
+# Linux/macOS
+source .venv/bin/activate
+# Windows PowerShell
+# .venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
 ```
 
-### 3. Install Required Python Packages
+### 2) Configure credentials
 
-Install the dependencies using `pip`:
+#### OpenAI
+Set your API key:
 
 ```bash
-pip install google-api-python-client google-auth google-auth-oauthlib openai
-```
-
-### 4. Set Up YouTube Data API Credentials
-
-#### a. Create a Project and Enable the API
-
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new project or select an existing one.
-3. Navigate to **APIs & Services > Library** and enable the **YouTube Data API v3**.
-
-#### b. Configure OAuth Consent and Create OAuth Credentials
-
-1. Navigate to **APIs & Services > OAuth consent screen** and configure it (choose "External" if you're testing).
-2. Go to **APIs & Services > Credentials**.
-3. Click on **Create Credentials** and choose **OAuth 2.0 Client IDs**.
-4. Select **Desktop App** as the application type.
-5. Download the resulting `client_secrets.json` file and place it in the project’s root directory.
-
-An example of the `client_secrets.json` file structure:
-
-```json
-{
-  "installed": {
-    "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
-    "project_id": "your-project-id",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_secret": "YOUR_CLIENT_SECRET",
-    "redirect_uris": [
-      "urn:ietf:wg:oauth:2.0:oob",
-      "http://localhost"
-    ]
-  }
-}
-```
-
-### 5. Set Up the OpenAI API Key
-
-Set your OpenAI API key as an environment variable. For example, on Linux or macOS, run:
-
-```bash
+# Linux/macOS
 export OPENAI_API_KEY="your_openai_api_key"
+
+# Windows PowerShell
+# $env:OPENAI_API_KEY="your_openai_api_key"
 ```
 
-On Windows (Command Prompt):
-
-```cmd
-set OPENAI_API_KEY=your_openai_api_key
-```
-
-Alternatively, you can create a `.env` file and load it within your script using a package like `python-dotenv`.
-
-### 6. Running the Script
-
-Run the Python script:
+Optional model override:
 
 ```bash
-python your_script_name.py
+export OPENAI_MODEL="gpt-4.1-mini"
 ```
 
-When prompted, paste the YouTube video URL. The script will then:
-- Extract the video ID from the URL.
-- Authenticate with the YouTube Data API (a browser window may open for OAuth authentication during the first run).
-- Fetch a set number of comments from the video.
-- Generate a response using the OpenAI API.
-- Post the generated response as a new comment on the video.
+#### YouTube OAuth
 
-## Notes and Considerations
+1. Open [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable **YouTube Data API v3**
+3. Create OAuth 2.0 Client ID credentials for **Desktop app**
+4. Download JSON and place it in the repo root as:
 
-- **API Quotas:** Both the YouTube Data API and OpenAI API have usage limits. Monitor your API usage to avoid exceeding quotas.
-- **Token Limits:** When sending multiple comments to OpenAI, ensure that the combined text does not exceed token limits. You may need to reduce the number of comments or summarize them.
-- **OAuth Tokens:** The first time you run the script, you will be asked to authenticate via a web browser. The resulting credentials are stored in a `token.pickle` file for subsequent runs.
-- **Security:** Keep your API keys and credentials secure and do not share them publicly.
+```text
+client_secrets.json
+```
 
-## Troubleshooting
+On first run, OAuth completes and creates `token.json`.
 
-- **OAuth Issues:** If you encounter authentication errors, delete the `token.pickle` file and re-run the script to re-authenticate.
-- **OpenAI Errors:** Verify that your API key is correctly set and that you have internet access.
-- **YouTube Comments:** Ensure that the video URL is valid and that comments are enabled for the video.
+### 3) Run
+
+Preview only (no posting):
+
+```bash
+python YouTubeCommentResponder.py "https://www.youtube.com/watch?v=dQw4w9WgXcQ" --dry-run
+```
+
+Post for real:
+
+```bash
+python YouTubeCommentResponder.py "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+## CLI Options
+
+```text
+usage: YouTubeCommentResponder.py [-h] [--max-comments MAX_COMMENTS] [--model MODEL]
+                                  [--client-secrets CLIENT_SECRETS] [--token-file TOKEN_FILE]
+                                  [--auth-mode {auto,local,console}] [--dry-run]
+                                  video_url
+```
+
+- `video_url`: Target YouTube video URL.
+- `--max-comments`: How many comments to analyze (1-100, default 20).
+- `--model`: OpenAI model name (default `OPENAI_MODEL` env or `gpt-4.1-mini`).
+- `--client-secrets`: Path to Google OAuth client JSON (default `client_secrets.json`).
+- `--token-file`: OAuth token storage path (default `token.json`).
+- `--auth-mode`: OAuth flow mode:
+  - `auto` (default): local browser callback first, then console fallback
+  - `local`: force browser callback flow
+  - `console`: best for Android/Termux, SSH, and headless systems
+- `--dry-run`: Generate and print response without posting.
+
+## Platform Compatibility
+
+### Windows
+- Run via Python, or use the built `.exe` generated by CI/release.
+
+### macOS
+- Run via Python (`python3 ...`) directly.
+- Or download the macOS binary artifact produced by GitHub Actions.
+
+### Android (Termux)
+You can run the app from Android using Termux:
+
+```bash
+pkg update && pkg upgrade -y
+pkg install -y python git
+pip install -r requirements.txt
+```
+
+Then run with console OAuth mode:
+
+```bash
+python YouTubeCommentResponder.py "https://www.youtube.com/watch?v=dQw4w9WgXcQ" --auth-mode console --dry-run
+```
+
+> Note: Android app-style APK packaging is **not included** in this repo; Android support is via Termux CLI execution.
+
+## Build Windows EXE (Local)
+
+```bash
+pip install -r requirements.txt
+pyinstaller --onefile --name YouTubeCommentResponder YouTubeCommentResponder.py
+```
+
+Output:
+
+```text
+dist/YouTubeCommentResponder.exe
+```
+
+## Build macOS Binary (Local)
+
+```bash
+bash scripts/build_macos.sh
+```
+
+Output:
+
+```text
+dist/YouTubeCommentResponder-macos
+```
+
+## Build Binaries on GitHub
+
+This repo includes two workflows:
+
+- `.github/workflows/build-windows-exe.yml`
+- `.github/workflows/build-macos-binary.yml`
+
+Both workflows:
+- run on `workflow_dispatch`
+- run when tags like `v1.0.0` are pushed
+- upload build artifacts
+- attach binaries to GitHub Releases for version tags
+
+### Release flow
+
+1. Push code to GitHub
+2. Create tag:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. Download assets from release page
+
+## Security Notes
+
+- Do **not** commit:
+  - `client_secrets.json`
+  - `token.json`
+  - `.env`
+- Rotate credentials if accidentally exposed.
+
+## Disclaimer
+
+Use responsibly and follow YouTube API Terms and OpenAI policies. You are responsible for content posted by this tool.
